@@ -44,3 +44,21 @@ export async function loadAdminAppointments() {
   return response.json();
 }
 
+export type ChatApiResponse = {
+  reply: string;
+  session_id: string;
+  state: Record<string, unknown>;
+  needs_emergency: boolean;
+  handoff_ready: boolean;
+};
+
+export async function sendChatMessage(message: string, sessionId: string | null): Promise<ChatApiResponse> {
+  const response = await fetch(`${API_BASE}/chat/message`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, session_id: sessionId })
+  });
+  if (!response.ok) throw new Error("Failed to send chat message");
+  return response.json();
+}
+

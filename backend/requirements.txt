@@ -7,6 +7,9 @@ pydantic-settings
 python-dotenv
 httpx
 openai
+langchain
+langchain-openai
+langgraph
 celery
 redis
 twilio
