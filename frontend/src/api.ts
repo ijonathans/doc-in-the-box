@@ -1,0 +1,46 @@
+const API_BASE = "http://localhost:8000";
+
+export async function registerPatient(payload: {
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  insurance_provider: string;
+  insurance_member_id: string;
+  epic_patient_id?: string;
+  chronic_conditions?: string;
+}) {
+  const response = await fetch(`${API_BASE}/patient/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) throw new Error("Failed to register patient");
+  return response.json();
+}
+
+export async function runIntake(payload: {
+  patient_id: number;
+  symptoms_text: string;
+  preferred_zip_code: string;
+}) {
+  const response = await fetch(`${API_BASE}/patient/intake`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) throw new Error("Failed to run intake");
+  return response.json();
+}
+
+export async function loadAdminMetrics() {
+  const response = await fetch(`${API_BASE}/admin/metrics`);
+  if (!response.ok) throw new Error("Failed to load metrics");
+  return response.json();
+}
+
+export async function loadAdminAppointments() {
+  const response = await fetch(`${API_BASE}/admin/appointments`);
+  if (!response.ok) throw new Error("Failed to load appointments");
+  return response.json();
+}
+

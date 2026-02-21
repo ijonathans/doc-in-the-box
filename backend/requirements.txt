@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg[binary]
+alembic
+pydantic-settings
+python-dotenv
+httpx
+openai
+celery
+redis
+twilio
+pytest
+pytest-asyncio
+actiancortex
