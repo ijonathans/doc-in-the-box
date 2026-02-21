@@ -1,0 +1,416 @@
+"""
+Zocdoc API Client
+Covers: Appointments, Providers & Locations, Insurance Plans, Calendar Timeslots
+Docs: https://api-docs.zocdoc.com/apis
+"""
+
+import requests
+from typing import Optional
+
+
+BASE_URL = "https://api-developer-sandbox.zocdoc.com"  # swap to api-developer.zocdoc.com for production
+
+
+class ZocdocClient:
+    def __init__(self, access_token: str, base_url: str = BASE_URL):
+        self.base_url = base_url.rstrip("/")
+        self.session = requests.Session()
+        self.session.headers.update({
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        })
+
+    def _get(self, path: str, params: dict = None) -> dict:
+        response = self.session.get(f"{self.base_url}{path}", params=params)
+        response.raise_for_status()
+        return response.json()
+
+    def _post(self, path: str, body: dict = None) -> dict:
+        response = self.session.post(f"{self.base_url}{path}", json=body)
+        response.raise_for_status()
+        return response.json()
+
+    def _put(self, path: str, body: dict = None) -> dict:
+        response = self.session.put(f"{self.base_url}{path}", json=body)
+        response.raise_for_status()
+        return response.json()
+
+    # -------------------------------------------------------------------------
+    # APPOINTMENTS
+    # -------------------------------------------------------------------------
+
+    def create_appointment(
+        self,
+        start_time: str,
+        visit_reason_id: str,
+        provider_location_id: str,
+        patient: dict,
+        patient_type: str = "new",
+        notes: Optional[str] = None,
+    ) -> dict:
+        """
+        POST /v1/appointments
+        Book a new appointment. start_time must be ISO-8601 with timezone offset,
+        e.g. "2025-06-01T09:00:00-04:00". patient_type is "new" or "existing".
+        """
+        data = {
+            "start_time": start_time,
+            "visit_reason_id": visit_reason_id,
+            "provider_location_id": provider_location_id,
+            "patient": patient,
+            "patient_type": patient_type,
+        }
+        if notes:
+            data["notes"] = notes
+
+        return self._post("/v1/appointments", {
+            "appointment_type": "providers",
+            "data": data,
+        })
+
+    def get_appointments(
+        self,
+        page: int = 0,
+        page_size: int = 10,
+        statuses: Optional[list[str]] = None,
+        developer_patient_id: Optional[str] = None,
+        sort_by: Optional[str] = None,
+        sort_direction: Optional[str] = None,
+        provider_ids: Optional[list[str]] = None,
+        location_ids: Optional[list[str]] = None,
+        practice_ids: Optional[list[str]] = None,
+        start_time_utc_min: Optional[str] = None,
+        start_time_utc_max: Optional[str] = None,
+        created_time_utc_min: Optional[str] = None,
+        created_time_utc_max: Optional[str] = None,
+        last_modified_time_utc_min: Optional[str] = None,
+        last_modified_time_utc_max: Optional[str] = None,
+    ) -> dict:
+        """
+        GET /v1/appointments
+        Retrieve a paginated list of appointments. Max 1,000 total via pagination.
+        sort_by options: "start_time_utc", "created_time_utc", "last_modified_time_utc"
+        sort_direction options: "ascending", "descending"
+        """
+        params = {"page": page, "page_size": page_size}
+        if statuses:
+            params["statuses"] = ",".join(statuses)
+        if developer_patient_id:
+            params["developer_patient_id"] = developer_patient_id
+        if sort_by:
+            params["sort_by"] = sort_by
+        if sort_direction:
+            params["sort_direction"] = sort_direction
+        if provider_ids:
+            params["provider_ids"] = ",".join(provider_ids)
+        if location_ids:
+            params["location_ids"] = ",".join(location_ids)
+        if practice_ids:
+            params["practice_ids"] = ",".join(practice_ids)
+        if start_time_utc_min:
+            params["start_time_utc_min"] = start_time_utc_min
+        if start_time_utc_max:
+            params["start_time_utc_max"] = start_time_utc_max
+        if created_time_utc_min:
+            params["created_time_utc_min"] = created_time_utc_min
+        if created_time_utc_max:
+            params["created_time_utc_max"] = created_time_utc_max
+        if last_modified_time_utc_min:
+            params["last_modified_time_utc_min"] = last_modified_time_utc_min
+        if last_modified_time_utc_max:
+            params["last_modified_time_utc_max"] = last_modified_time_utc_max
+
+        return self._get("/v1/appointments", params)
+
+    def get_appointment(self, appointment_id: str) -> dict:
+        """
+        GET /v1/appointments/{appointment_id}
+        Retrieve details and status for a single appointment.
+        """
+        return self._get(f"/v1/appointments/{appointment_id}")
+
+    def get_appointment_participants(self, appointment_id: str) -> dict:
+        """
+        GET /v1/appointments/{appointment_id}/participants
+        Retrieve the patient, provider, and location participants of an appointment.
+        Includes uploaded attachments (insurance cards, ID cards, intake forms, etc.).
+        """
+        return self._get(f"/v1/appointments/{appointment_id}/participants")
+
+    def cancel_appointment(
+        self,
+        appointment_id: str,
+        cancellation_reason_type: Optional[str] = None,
+        cancellation_reason: Optional[str] = None,
+    ) -> dict:
+        """
+        POST /v1/appointments/cancel
+        Cancel an appointment that is not already in a cancelled state.
+        cancellation_reason_type options:
+          "patient_no_longer_needs_appointment", "patient_no_longer_available",
+          "other_patient_reason", "missing_needed_patient_information",
+          "payment_or_insurance_issue", "patient_or_visit_type_not_accepted",
+          "provider_not_available", "rescheduling_patient", "other_provider_reason"
+        cancellation_reason (free text, <= 50 chars) only used with "other_*" types.
+        """
+        body = {"appointment_id": appointment_id}
+        if cancellation_reason_type:
+            body["cancellation_reason_type"] = cancellation_reason_type
+        if cancellation_reason:
+            body["cancellation_reason"] = cancellation_reason
+        return self._post("/v1/appointments/cancel", body)
+
+    def confirm_appointment(self, appointment_id: str) -> dict:
+        """
+        POST /v1/appointments/confirm
+        Confirm an appointment that is in "pending_booking" status.
+        Only needed when confirmation_type is "manual".
+        """
+        return self._post("/v1/appointments/confirm", {"appointment_id": appointment_id})
+
+    def reschedule_appointment(self, appointment_id: str, new_start_time: str) -> dict:
+        """
+        POST /v1/appointments/reschedule
+        Change the start time of an existing appointment.
+        new_start_time must be ISO-8601 with timezone offset.
+        Appointment must be in: pending_booking, confirmed, pending_reschedule, or rescheduled.
+        """
+        return self._post("/v1/appointments/reschedule", {
+            "appointment_id": appointment_id,
+            "start_time": new_start_time,
+        })
+
+    def upload_appointment_attachment(
+        self,
+        appointment_id: str,
+        file_path: str,
+        attachment_type: str,
+    ) -> dict:
+        """
+        POST /v1/appointments/{appointment_id}/attachments
+        Upload a document (jpg, png, pdf, docx; max 10MB) to an appointment.
+        attachment_type options: "community_care_packet", "pcp_patient_referral"
+        Cannot upload to failed appointments or >7 days after the appointment.
+        """
+        url = f"{self.base_url}/v1/appointments/{appointment_id}/attachments"
+        headers = {"Authorization": self.session.headers["Authorization"]}
+        with open(file_path, "rb") as f:
+            response = requests.post(
+                url,
+                headers=headers,
+                files={"attachment": f},
+                data={"attachment_type": attachment_type},
+            )
+        response.raise_for_status()
+        return response.json()
+
+    def update_appointment_status(
+        self,
+        appointment_id: str,
+        appointment_status: str,
+    ) -> dict:
+        """
+        PUT /v1/appointments/update-status
+        Update appointment status to "arrived" or "no_show".
+        For no_show: appointment start time must be in the past, but no older than 2 days.
+        """
+        return self._put("/v1/appointments/update-status", {
+            "appointment_id": appointment_id,
+            "appointment_status": appointment_status,
+        })
+
+    # -------------------------------------------------------------------------
+    # PROVIDERS & LOCATIONS
+    # -------------------------------------------------------------------------
+
+    def get_providers(self, **params) -> dict:
+        """
+        GET /v1/providers
+        Retrieve providers within the developer's directory.
+        Pass any supported query params as keyword arguments.
+        """
+        return self._get("/v1/providers", params or None)
+
+    def get_provider_locations(self, **params) -> dict:
+        """
+        GET /v1/provider_locations
+        Retrieve all provider locations in the developer's directory.
+        """
+        return self._get("/v1/provider_locations", params or None)
+
+    def get_provider_location(self, provider_location_id: str) -> dict:
+        """
+        GET /v1/provider_locations/{provider_location_id}
+        Retrieve a single provider location by ID.
+        """
+        return self._get(f"/v1/provider_locations/{provider_location_id}")
+
+    def get_provider_location_availability(self, **params) -> dict:
+        """
+        GET /v1/provider_locations/availability
+        Retrieve available timeslots for provider locations.
+        Common params: provider_location_id, start_date, end_date, visit_reason_id
+        """
+        return self._get("/v1/provider_locations/availability", params or None)
+
+    def get_provider_location_insurance_mappings(self, provider_location_id: str) -> dict:
+        """
+        GET /v1/provider_locations/{provider_location_id}/insurance_mappings
+        Retrieve the insurance plans accepted at a specific provider location.
+        """
+        return self._get(f"/v1/provider_locations/{provider_location_id}/insurance_mappings")
+
+    def add_provider_location_insurance_mappings(
+        self,
+        provider_location_id: str,
+        insurance_mappings: list[dict],
+    ) -> dict:
+        """
+        POST /v1/provider_locations/{provider_location_id}/insurance_mappings
+        Add insurance plan mappings to a provider location.
+        insurance_mappings: list of mapping objects as defined by the API spec.
+        """
+        return self._post(
+            f"/v1/provider_locations/{provider_location_id}/insurance_mappings",
+            {"insurance_mappings": insurance_mappings},
+        )
+
+    # -------------------------------------------------------------------------
+    # INSURANCE PLANS
+    # -------------------------------------------------------------------------
+
+    def get_insurance_plans(self, **params) -> dict:
+        """
+        GET /v1/insurance_plans
+        Retrieve all insurance plans supported by Zocdoc.
+        Pass any supported query params as keyword arguments (e.g. page, page_size).
+        """
+        return self._get("/v1/insurance_plans", params or None)
+
+    def get_insurance_plan(self, insurance_plan_id: str) -> dict:
+        """
+        GET /v1/insurance_plans/{insurance_plan_id}
+        Retrieve a single insurance plan by its Zocdoc ID (e.g. "ip_2224").
+        """
+        return self._get(f"/v1/insurance_plans/{insurance_plan_id}")
+
+    # -------------------------------------------------------------------------
+    # CALENDAR INTEGRATION TIMESLOTS
+    # -------------------------------------------------------------------------
+
+    def get_provider_timeslots(self, provider_id: str, **params) -> dict:
+        """
+        GET /v1/providers/{provider_id}/calendar/timeslots
+        Retrieve calendar timeslots for a specific provider.
+        Pass date range and other filters as keyword arguments.
+        """
+        return self._get(f"/v1/providers/{provider_id}/calendar/timeslots", params or None)
+
+    def update_provider_timeslots(self, provider_id: str, timeslots: list[dict]) -> dict:
+        """
+        PUT /v1/providers/{provider_id}/calendar/timeslots
+        Set/update calendar timeslots for a provider.
+        timeslots: list of timeslot objects as defined by the API spec.
+        """
+        return self._put(
+            f"/v1/providers/{provider_id}/calendar/timeslots",
+            {"timeslots": timeslots},
+        )
+
+    # -------------------------------------------------------------------------
+    # SCHEDULABLE ENTITIES
+    # -------------------------------------------------------------------------
+
+    def get_schedulable_entities(self, **params) -> dict:
+        """
+        GET /v1/schedulable_entities
+        Retrieve schedulable entities with availability information.
+        """
+        return self._get("/v1/schedulable_entities", params or None)
+
+
+# =============================================================================
+# EXAMPLE USAGE
+# =============================================================================
+
+if __name__ == "__main__":
+    client = ZocdocClient(access_token="YOUR_ACCESS_TOKEN_HERE")
+
+    # --- Appointments ---
+
+    # List confirmed appointments for a date range
+    appointments = client.get_appointments(
+        statuses=["confirmed"],
+        start_time_utc_min="2025-06-01T00:00:00Z",
+        start_time_utc_max="2025-06-30T23:59:59Z",
+        sort_by="start_time_utc",
+        sort_direction="ascending",
+    )
+    print("Appointments:", appointments)
+
+    # Get a single appointment
+    appt = client.get_appointment("d04b049a-41b1-4aba-9268-d8973cf72cdd")
+    print("Appointment:", appt)
+
+    # Create a new appointment
+    patient = {
+        "first_name": "Jane",
+        "last_name": "Doe",
+        "date_of_birth": "1990-05-15",
+        "sex_at_birth": "female",
+        "phone_number": "4045550123",
+        "email_address": "jane.doe@example.com",
+        "patient_address": {
+            "address1": "123 Main St",
+            "city": "Atlanta",
+            "state": "GA",
+            "zip_code": "30301",
+        },
+    }
+    new_appt = client.create_appointment(
+        start_time="2025-06-15T10:00:00-04:00",
+        visit_reason_id="pc_FRO-18leckytNKtruw5dLR",
+        provider_location_id="pr_abc123-def456_wxyz7890|lo_abc123-def456_wxyz7890",
+        patient=patient,
+        patient_type="new",
+    )
+    print("Created:", new_appt)
+
+    # Reschedule
+    rescheduled = client.reschedule_appointment(
+        appointment_id=new_appt["data"]["appointment_id"],
+        new_start_time="2025-06-20T14:00:00-04:00",
+    )
+    print("Rescheduled:", rescheduled)
+
+    # Cancel
+    cancelled = client.cancel_appointment(
+        appointment_id=new_appt["data"]["appointment_id"],
+        cancellation_reason_type="patient_no_longer_available",
+    )
+    print("Cancelled:", cancelled)
+
+    # --- Providers & Locations ---
+
+    providers = client.get_providers()
+    print("Providers:", providers)
+
+    availability = client.get_provider_location_availability(
+        provider_location_id="pr_abc123-def456_wxyz7890|lo_abc123-def456_wxyz7890",
+        start_date="2025-06-01",
+        end_date="2025-06-07",
+    )
+    print("Availability:", availability)
+
+    # --- Insurance ---
+
+    plans = client.get_insurance_plans(page=0, page_size=20)
+    print("Insurance Plans:", plans)
+
+    plan = client.get_insurance_plan("ip_2224")
+    print("Plan:", plan)
+
+    # --- Calendar Timeslots ---
+
+    timeslots = client.get_provider_timeslots("pr_abc123-def456_wxyz7890")
+    print("Timeslots:", timeslots)
