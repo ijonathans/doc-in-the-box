@@ -60,6 +60,7 @@ class InterviewState(TypedDict, total=False):
     care_plan: dict[str, Any]
     provider_search: ProviderSearchState
     booking: BookingState
+    booking_confirmed: bool
 
 
 DEFAULT_INTERVIEW_STATE: InterviewState = {
@@ -83,6 +84,7 @@ DEFAULT_INTERVIEW_STATE: InterviewState = {
     "care_plan": {},
     "provider_search": {"constraints": {}, "results": []},
     "booking": {"status": "not_started"},
+    "booking_confirmed": False,
     "assistant_reply": "",
     "conversation_mode": "normal_chat",
     "route_intent": "normal_chat",

@@ -30,14 +30,19 @@ async def state_verifier_node(state: InterviewState) -> dict[str, Any]:
             or "I am concerned this could be an emergency. Call your local emergency number now.",
         }
 
-    # Minimal required intake dataset for handoff.
-    if not state.get("chief_complaint"):
+    # Minimal required intake dataset for handoff. Timeline must be explicitly given (reject vague inferred values).
+    _complaint = (state.get("chief_complaint") or "").strip()
+    _timeline = (state.get("timeline") or "").strip()
+    vague_timelines = ("today", "recently", "recent", "just started", "lately")
+    timeline_insufficient = not _timeline or _timeline.lower() in vague_timelines or len(_timeline) < 4
+
+    if not _complaint:
         missing_fields.append("chief_complaint")
-    if not state.get("timeline"):
+    if timeline_insufficient:
         missing_fields.append("timeline")
 
     if missing_fields:
-        return {
+        out: dict[str, Any] = {
             "red_flags": red_flags,
             "needs_emergency": False,
             "handoff_ready": False,
@@ -45,6 +50,9 @@ async def state_verifier_node(state: InterviewState) -> dict[str, Any]:
             "next_action": "continue_questioning",
             "assistant_reply": state.get("assistant_reply") or _build_follow_up_question(missing_fields),
         }
+        if timeline_insufficient and "timeline" in missing_fields:
+            out["timeline"] = None  # Clear vague timeline so nurse asks again
+        return out
 
     return {
         "red_flags": red_flags,

@@ -16,6 +16,8 @@ HEALTH_INTENT_HINTS = [
     "symptom",
     "sick",
     "ill",
+    "unwell",
+    "feeling",
     "fever",
     "cough",
     "vomit",

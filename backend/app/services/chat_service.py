@@ -1,3 +1,4 @@
+import json
 from uuid import uuid4
 
 from langchain_openai import ChatOpenAI
@@ -27,6 +28,7 @@ class ChatService:
             # Backward compatibility for sessions created before router fields existed.
             state.setdefault("conversation_mode", "normal_chat")
             state.setdefault("route_intent", "normal_chat")
+            state.setdefault("booking_confirmed", False)
 
         state["session_id"] = resolved_session_id
         state["latest_user_message"] = message
@@ -34,10 +36,16 @@ class ChatService:
         updated_state = await self.graph.run(state)
         await self.session_store.set(resolved_session_id, updated_state)
 
+        # Sanitize state for JSON response (avoid non-serializable values that could cause slow serialization or frontend freeze)
+        try:
+            state_for_response = json.loads(json.dumps(updated_state, default=str))
+        except (TypeError, ValueError):
+            state_for_response = dict(updated_state)
+
         return {
             "reply": updated_state.get("assistant_reply", ""),
             "session_id": resolved_session_id,
-            "state": updated_state,
+            "state": state_for_response,
             "needs_emergency": bool(updated_state.get("needs_emergency")),
             "handoff_ready": bool(updated_state.get("handoff_ready")),
         }

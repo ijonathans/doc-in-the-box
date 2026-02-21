@@ -14,6 +14,7 @@ class Settings(BaseSettings):
 
     actian_host: str = "localhost:50051"
     actian_collection_name: str = "patient_long_term_memory"
+    medlineplus_collection: str = "medlineplus_topics"
 
     zocdoc_base_url: str = "https://api.zocdoc.com"
     zocdoc_client_id: str = ""

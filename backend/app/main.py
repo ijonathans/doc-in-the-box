@@ -1,3 +1,5 @@
+import warnings
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,6 +11,10 @@ from app.core.config import settings
 from app.db.base import Base
 from app.db.session import engine
 from app.models import Appointment, DoctorCandidate, InteractionLog, Patient
+
+
+# Silence Pydantic serializer warnings from LangChain structured output (RouterDecision, NurseExtraction)
+warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 
 
 def create_app() -> FastAPI:

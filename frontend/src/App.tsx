@@ -2,16 +2,19 @@ import type { KeyboardEvent } from "react";
 import { useState } from "react";
 import {
   ArrowUpRight,
-  Folder,
+  CalendarCheck,
   History,
-  Home,
-  Layers,
-  Search
+  MessageCircle,
+  ShieldCheck,
+  User
 } from "lucide-react";
 
+import { AppointmentView } from "@/components/AppointmentView";
+import { HistoryChatView } from "@/components/HistoryChatView";
+import { InsuranceView } from "@/components/InsuranceView";
 import { PrimaryActionButton } from "@/components/PrimaryActionButton";
+import { ProfileView } from "@/components/ProfileView";
 import { SidebarNavItem } from "@/components/SidebarNavItem";
-import { TemplateCard } from "@/components/TemplateCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,19 +29,20 @@ type ChatMessage = {
 };
 
 export default function App() {
-  const [activeNav, setActiveNav] = useState("home");
+  const [activeNav, setActiveNav] = useState("chat");
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatSessionId, setChatSessionId] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
 
-  const navItems = [
-    { id: "home", label: "Home", icon: Home },
-    { id: "search", label: "Search", icon: Search },
-    { id: "layers", label: "Layers", icon: Layers },
-    { id: "folder", label: "Folder", icon: Folder },
-    { id: "history", label: "History", icon: History }
+  const navItemsMain = [
+    { id: "chat", label: "Chat", icon: MessageCircle },
+    { id: "appointment", label: "Appointment", icon: CalendarCheck },
+    { id: "insurance", label: "Insurance", icon: ShieldCheck },
+    { id: "profile", label: "Profile", icon: User },
   ];
+  const navItemHistory = { id: "history", label: "History Chat", icon: History };
+  const navItems = [...navItemsMain, navItemHistory];
 
   const isChatMode = messages.length > 0;
 
@@ -87,7 +91,7 @@ export default function App() {
         <div className="flex flex-col items-center gap-6">
           <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-blue-500 shadow-md" />
           <nav className="flex flex-col items-center gap-3">
-            {navItems.map((item) => (
+            {navItemsMain.map((item) => (
               <SidebarNavItem
                 key={item.id}
                 icon={item.icon}
@@ -96,6 +100,15 @@ export default function App() {
                 onClick={() => setActiveNav(item.id)}
               />
             ))}
+            <div className="mt-2 border-t border-white/10 pt-2">
+              <SidebarNavItem
+                key={navItemHistory.id}
+                icon={navItemHistory.icon}
+                label={navItemHistory.label}
+                active={activeNav === navItemHistory.id}
+                onClick={() => setActiveNav(navItemHistory.id)}
+              />
+            </div>
           </nav>
         </div>
         <div className="flex flex-col items-center gap-2">
@@ -111,8 +124,8 @@ export default function App() {
       </aside>
 
       <div className="sticky top-0 z-20 border-b border-border/70 bg-background/95 px-4 py-3 backdrop-blur md:hidden">
-        <div className="mx-auto flex max-w-content items-center justify-center gap-2">
-          {navItems.slice(0, 4).map((item) => (
+        <div className="mx-auto flex max-w-content flex-wrap items-center justify-center gap-2">
+          {navItems.map((item) => (
             <SidebarNavItem
               key={item.id}
               icon={item.icon}
@@ -126,7 +139,11 @@ export default function App() {
 
       <section className="relative px-4 py-8 md:ml-[72px] md:px-8 md:py-10">
         <div className="mx-auto flex w-full max-w-content flex-col gap-16">
-          {!isChatMode ? (
+          {activeNav === "appointment" && <AppointmentView />}
+          {activeNav === "insurance" && <InsuranceView />}
+          {activeNav === "profile" && <ProfileView />}
+          {activeNav === "history" && <HistoryChatView />}
+          {activeNav === "chat" && !isChatMode ? (
             <>
               <div className="flex flex-col items-center justify-center gap-8 text-center md:min-h-[54vh]">
                 <div className="h-16 w-16 rounded-full bg-[radial-gradient(circle_at_30%_30%,#c084fc_0%,#60a5fa_45%,#ec4899_100%)] shadow-lg" />
@@ -157,7 +174,7 @@ export default function App() {
                 </Card>
               </div>
             </>
-          ) : (
+          ) : activeNav === "chat" ? (
             <section className="fixed bottom-0 left-0 right-0 top-[61px] flex flex-col bg-background md:left-[72px] md:top-0">
               <div className="flex-1 overflow-y-auto px-4 pb-6 pt-4 md:px-8 md:pt-8">
                 <div className="mx-auto flex h-full w-full max-w-5xl flex-col justify-end rounded-2xl border border-border bg-card p-4 shadow-card md:p-6">
@@ -216,7 +233,7 @@ export default function App() {
                 </div>
               </div>
             </section>
-          )}
+          ) : null}
         </div>
       </section>
     </main>
