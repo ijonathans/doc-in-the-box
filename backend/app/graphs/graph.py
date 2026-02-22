@@ -4,8 +4,10 @@ from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 
 from app.graphs.ask_booking_consent_node import ask_booking_consent_node
+from app.graphs.call_summarize_node import call_summarize_node
 from app.graphs.normal_chat_node import normal_chat_node
 from app.graphs.nurse_intake_node import nurse_intake_node
+from app.graphs.outbound_call_node import outbound_call_node
 from app.graphs.provider_locations_node import provider_locations_node
 from app.graphs.rag_medlineplus_node import rag_medlineplus_node
 from app.graphs.router_node import router_node
@@ -51,6 +53,15 @@ class TriageInterviewGraph:
         async def _provider_locations_wrapper(state: InterviewState) -> dict[str, Any]:
             return await provider_locations_node(state)
 
+        async def _outbound_call_wrapper(state: InterviewState) -> dict[str, Any]:
+            return await outbound_call_node(state)
+
+        async def _call_summarize_wrapper(state: InterviewState) -> dict[str, Any]:
+            return await call_summarize_node(state)
+
+        def _after_call_summarize_selector(state: InterviewState) -> str:
+            return "end" if state.get("reply_from_call_summary") else "router"
+
         def _after_ready_selector(state: InterviewState) -> str:
             if state.get("booking_confirmed"):
                 return "rag"
@@ -64,9 +75,16 @@ class TriageInterviewGraph:
         workflow.add_node("ask_booking_consent_node", _ask_consent_wrapper)
         workflow.add_node("rag_medlineplus_node", _rag_wrapper)
         workflow.add_node("provider_locations_node", _provider_locations_wrapper)
+        workflow.add_node("outbound_call_node", _outbound_call_wrapper)
+        workflow.add_node("call_summarize_node", _call_summarize_wrapper)
         workflow.add_node("emergency_escalation", _emergency_node)
 
-        workflow.add_edge(START, "router_node")
+        workflow.add_edge(START, "call_summarize_node")
+        workflow.add_conditional_edges(
+            "call_summarize_node",
+            _after_call_summarize_selector,
+            {"end": END, "router": "router_node"},
+        )
         workflow.add_conditional_edges(
             "router_node",
             _route_selector,
@@ -90,7 +108,8 @@ class TriageInterviewGraph:
         )
         workflow.add_edge("ask_booking_consent_node", END)
         workflow.add_edge("rag_medlineplus_node", "provider_locations_node")
-        workflow.add_edge("provider_locations_node", END)
+        workflow.add_edge("provider_locations_node", "outbound_call_node")
+        workflow.add_edge("outbound_call_node", END)
         workflow.add_edge("emergency_escalation", END)
         return workflow.compile()
 

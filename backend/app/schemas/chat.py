@@ -14,3 +14,5 @@ class ChatResponse(BaseModel):
     state: dict[str, Any]
     needs_emergency: bool
     handoff_ready: bool
+    outbound_call_started: bool = False
+    outbound_call_error: str = ""

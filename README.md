@@ -1,45 +1,42 @@
 # Hacklytics GenAI Healthcare Agent
 
-This project contains a proactive patient-facing AI agent that:
+A proactive patient-facing AI agent that:
 
-- gathers patient symptom details,
-- uses Epic FHIR history context,
-- searches ZocDoc doctor availability and insurance fit,
-- calls medical offices via ElevenLabs to verify in-network coverage and slots,
-- sends appointment confirmations via SMS.
-- stores long-term patient memory using Actian VectorAI DB with PostgreSQL as structured storage.
+- Gathers patient symptom details via chat (triage flow),
+- Uses Epic FHIR history when configured,
+- Searches ZocDoc for doctor availability and insurance fit,
+- Calls medical offices via ElevenLabs to verify in-network coverage and book slots,
+- Sends appointment confirmations via SMS (Twilio),
+- Stores long-term patient memory using Actian VectorAI DB with PostgreSQL.
 
-## Project Structure
+## For teammates: getting started
 
-- `backend` - FastAPI app, orchestration services, data models, and background jobs.
-- `frontend` - React TypeScript app for patient and admin views.
+**Use the [STARTUP_GUIDE.md](STARTUP_GUIDE.md)** for full setup: prerequisites, PostgreSQL/Actian/Redis, backend `.env`, how to run backend and frontend, and ngrok for ElevenLabs webhooks.
 
-## Backend Quick Start
+**TL;DR:** From repo root: run PostgreSQL (+ Redis recommended). In `backend`: copy `.env.example` to `.env`, create venv, `pip install -r requirements.txt`, `uvicorn app.main:app --reload`. In `frontend`: `npm install`, `npm run dev`. Open **http://localhost:5173** for the app and **http://localhost:8000/docs** for the API.
 
-1. Create virtual environment.
-2. Install dependencies with `pip install -r requirements.txt`.
-3. Copy `backend/.env.example` to `backend/.env` and set credentials.
-4. Run API with `uvicorn app.main:app --reload`.
+**Accessing via ngrok:** If you serve the frontend through an ngrok URL (e.g. `https://xxx.ngrok-free.dev`), Vite may block the host. The project allows all hosts in `frontend/vite.config.ts` (`server.allowedHosts: true`). Restart `npm run dev` after pulling; the "Blocked request. This host is not allowed" error should go away.
 
-## Actian Vector Memory Setup
+## Project structure
 
-1. Start Actian VectorAI DB container (`localhost:50051`) using the project guide:
-   - `docker compose up`
-2. Keep PostgreSQL running for transactional records.
-3. Set memory env vars in `backend/.env`:
-   - `ACTIAN_HOST`
-   - `ACTIAN_COLLECTION_NAME`
-   - `EMBEDDING_MODEL`
-   - `MEMORY_TOP_K`
-   - `MEMORY_VECTOR_DIMENSION`
-4. The API will:
-   - persist profile/symptom/appointment memory entries to Actian,
-   - retrieve top-k memory context before triage.
+- **backend** — FastAPI app, LangGraph triage/orchestration, ZocDoc/ElevenLabs/Twilio integrations, Actian memory, webhooks.
+- **frontend** — React + TypeScript + Vite; patient chat UI and views (appointment, insurance, profile).
 
-Reference: https://github.com/hackmamba-io/actian-vectorAI-db-beta
+## Backend quick start
 
-## Frontend Quick Start
+1. `cd backend`; create venv and activate it.
+2. `pip install -r requirements.txt`
+3. Copy `.env.example` to `.env` and set credentials (see STARTUP_GUIDE).
+4. Run `uvicorn app.main:app --reload` → API at **http://localhost:8000**
 
-1. Install dependencies with `npm install`.
-2. Start app with `npm run dev`.
+## Frontend quick start
+
+1. `cd frontend`; `npm install`
+2. `npm run dev` → UI at **http://localhost:5173**
+
+## Actian vector memory
+
+1. Start Actian VectorAI DB (e.g. `localhost:50051`) per: https://github.com/hackmamba-io/actian-vectorAI-db-beta
+2. Set in `backend/.env`: `ACTIAN_HOST`, `ACTIAN_COLLECTION_NAME`, `EMBEDDING_MODEL`, `MEMORY_TOP_K`, `MEMORY_VECTOR_DIMENSION`
+3. The API persists profile/symptom/appointment memory to Actian and retrieves context for triage.
 

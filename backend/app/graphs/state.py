@@ -36,6 +36,14 @@ class BookingState(TypedDict):
     status: str
 
 
+class OutboundCallState(TypedDict, total=False):
+    """State for ElevenLabs outbound call flow (call clinics one by one until booked)."""
+    next_clinic_index: int  # 0-based index into provider_search.results
+    conversation_id: str  # ElevenLabs conversation_id from outbound-call response
+    call_started: bool
+    booking_result: str  # e.g. "booked", "not_available", "pending"
+
+
 class InterviewState(TypedDict, total=False):
     session_id: str
     latest_user_message: str
@@ -50,6 +58,17 @@ class InterviewState(TypedDict, total=False):
     chief_complaint: str | None
     timeline: str | None
     severity: str | None
+    body_location: str | None
+    pain_quality: str | None
+    severity_0_10: int | None
+    temporal_pattern: str | None
+    trajectory: str | None
+    modifying_factors: str | None
+    onset: str | None
+    precipitating_factors: str | None
+    recurrent: bool | None
+    sick_contacts: bool | None
+    red_flags_screening_done: bool
     red_flags: RedFlagsState
     symptoms: list[str]
     pmh_meds_allergies: dict[str, Any]
@@ -61,6 +80,8 @@ class InterviewState(TypedDict, total=False):
     provider_search: ProviderSearchState
     booking: BookingState
     booking_confirmed: bool
+    outbound_call: OutboundCallState
+    reply_from_call_summary: bool  # Transient: do not persist; used to route to END after Call_summarize
 
 
 DEFAULT_INTERVIEW_STATE: InterviewState = {
@@ -74,6 +95,17 @@ DEFAULT_INTERVIEW_STATE: InterviewState = {
     "chief_complaint": None,
     "timeline": None,
     "severity": None,
+    "body_location": None,
+    "pain_quality": None,
+    "severity_0_10": None,
+    "temporal_pattern": None,
+    "trajectory": None,
+    "modifying_factors": None,
+    "onset": None,
+    "precipitating_factors": None,
+    "recurrent": None,
+    "sick_contacts": None,
+    "red_flags_screening_done": False,
     "red_flags": {"present": [], "absent": [], "unknown": []},
     "symptoms": [],
     "pmh_meds_allergies": {},
@@ -85,6 +117,7 @@ DEFAULT_INTERVIEW_STATE: InterviewState = {
     "provider_search": {"constraints": {}, "results": []},
     "booking": {"status": "not_started"},
     "booking_confirmed": False,
+    "outbound_call": {},
     "assistant_reply": "",
     "conversation_mode": "normal_chat",
     "route_intent": "normal_chat",

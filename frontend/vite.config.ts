@@ -9,7 +9,9 @@ export default defineConfig({
     }
   },
   server: {
-    port: 5173
+    port: 5173,
+    // Allow access when frontend is served via ngrok or other tunnel (e.g. https://xxx.ngrok-free.dev)
+    allowedHosts: true
   }
 });
 

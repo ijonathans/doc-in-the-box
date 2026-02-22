@@ -31,6 +31,7 @@ class ZocDocClient:
         """
         if not specialty_id and not visit_reason_id:
             visit_reason_id = visit_reason_id or DEFAULT_VISIT_REASON_ID
+        # Use real Zocdoc API only when both credentials are set (see .env.example)
         if not self.client_id or not self.client_secret:
             return self._sandbox_provider_locations(zip_code, page_size)
 
@@ -98,25 +99,89 @@ class ZocDocClient:
             {
                 "provider_location_id": "sandbox_1",
                 "doctor_name": "Dr. Sarah Lin",
-                "phone_number": "(404) 555-0101",
+                "phone_number": "(912) 224-2661",
                 "address": f"123 Main St, Atlanta, GA {zip_code}",
                 "first_availability_date_in_provider_local_time": "2026-02-23",
             },
             {
                 "provider_location_id": "sandbox_2",
                 "doctor_name": "Dr. James Carter",
-                "phone_number": "(404) 555-0102",
+                "phone_number": "(404) 692-3162",
                 "address": f"456 Oak Ave, Atlanta, GA {zip_code}",
                 "first_availability_date_in_provider_local_time": "2026-02-24",
             },
             {
                 "provider_location_id": "sandbox_3",
                 "doctor_name": "Dr. Maria Santos",
-                "phone_number": "(404) 555-0103",
+                "phone_number": "(912) 224-2661",
                 "address": f"789 Pine Rd, Atlanta, GA {zip_code}",
                 "first_availability_date_in_provider_local_time": "2026-02-25",
             },
         ][:page_size]
+
+    async def get_provider_location_availability(
+        self,
+        provider_location_ids: list[str],
+        visit_reason_id: str,
+        *,
+        patient_type: str = "new",
+        start_date_in_provider_local_time: str | None = None,
+        end_date_in_provider_local_time: str | None = None,
+    ) -> list[dict]:
+        """
+        GET /v1/provider_locations/availability. Returns list of availability slots
+        (each with provider_location_id and start_time) for the given locations.
+        """
+        if not provider_location_ids:
+            return []
+        if not self.client_id or not self.client_secret:
+            return self._sandbox_availability(provider_location_ids)
+
+        token = await self._get_access_token()
+        headers = {"Authorization": f"Bearer {token}"}
+        params: dict[str, str] = {
+            "provider_location_ids": ",".join(provider_location_ids),
+            "visit_reason_id": visit_reason_id,
+            "patient_type": patient_type,
+        }
+        if start_date_in_provider_local_time:
+            params["start_date_in_provider_local_time"] = start_date_in_provider_local_time
+        if end_date_in_provider_local_time:
+            params["end_date_in_provider_local_time"] = end_date_in_provider_local_time
+
+        async with httpx.AsyncClient(timeout=20) as client:
+            response = await client.get(
+                f"{self.base_url}/v1/provider_locations/availability",
+                headers=headers,
+                params=params,
+            )
+            response.raise_for_status()
+            payload = response.json()
+
+        data = payload.get("data") or payload
+        raw_slots = data.get("availability", data.get("availabilities", []))
+        if isinstance(raw_slots, dict):
+            raw_slots = raw_slots.get("slots", [])
+        return [self._parse_availability_slot(s) for s in raw_slots]
+
+    def _parse_availability_slot(self, item: dict) -> dict:
+        """Normalize a single availability slot to provider_location_id + start_time."""
+        return {
+            "provider_location_id": item.get("provider_location_id", ""),
+            "start_time": item.get("start_time", ""),
+        }
+
+    def _sandbox_availability(self, provider_location_ids: list[str]) -> list[dict]:
+        """Return fake timeslots when no credentials (sandbox)."""
+        slots = []
+        for i, plid in enumerate(provider_location_ids[:3]):
+            slots.append(
+                {
+                    "provider_location_id": plid,
+                    "start_time": f"2026-02-2{i + 3}T09:00:00-05:00",
+                }
+            )
+        return slots
 
     async def search_doctors(
         self,

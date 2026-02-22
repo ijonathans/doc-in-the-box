@@ -7,6 +7,7 @@ from app.api.routes.admin import router as admin_router
 from app.api.routes.chat import router as chat_router
 from app.api.routes.health import router as health_router
 from app.api.routes.patient import router as patient_router
+from app.api.routes.webhooks import router as webhooks_router
 from app.core.config import settings
 from app.db.base import Base
 from app.db.session import engine
@@ -36,6 +37,7 @@ def create_app() -> FastAPI:
     app.include_router(patient_router, prefix="/patient", tags=["patient"])
     app.include_router(admin_router, prefix="/admin", tags=["admin"])
     app.include_router(chat_router, prefix="/chat", tags=["chat"])
+    app.include_router(webhooks_router, prefix="/webhooks", tags=["webhooks"])
 
     @app.on_event("startup")
     def _startup() -> None:

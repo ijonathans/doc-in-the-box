@@ -1,9 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 
 const HARDCODED_INSURANCE = {
-  planName: "Acme Health PPO",
-  memberId: "MEM-2024-XXXX",
-  group: "GRP-001",
+  planName: "UnitedHealthcare Choice Plus POS",
+  memberId: "7994822",
+  group: "UHCSTRC01",
   status: "Active",
 };
 

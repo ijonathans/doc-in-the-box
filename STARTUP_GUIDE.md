@@ -1,12 +1,19 @@
-# Hacklytics App Startup Guide
+# Doc-in-the-box Startup Guide
 
-This guide explains how to run the full app locally, including:
+This guide helps teammates run the full app locally and understand how the pieces fit together.
 
-- Backend API (FastAPI)
-- Frontend (React + Vite)
-- Structured database (PostgreSQL)
-- Long-term memory store (Actian VectorAI DB)
-- Optional queue (Redis)
+**What this app does:** A patient-facing healthcare agent that collects symptoms via chat (triage), searches for providers (ZocDoc), calls clinics via ElevenLabs to book appointments, and stores long-term memory (Actian + PostgreSQL). The frontend is a React chat UI; the backend is a FastAPI + LangGraph orchestration layer.
+
+**What you need to run:**
+- Backend API (FastAPI) — chat, triage, outbound calls, webhooks
+- Frontend (React + Vite) — patient chat UI
+- PostgreSQL — transactional data (patients, appointments)
+- Actian VectorAI DB — vector memory (optional for basic chat)
+- Redis — session store and call-summary bridge (needed for multi-turn chat and ElevenLabs webhooks)
+
+---
+
+**Quick start (once env is set):** Backend: `cd backend` → activate venv → `uvicorn app.main:app --reload`. Frontend: `cd frontend` → `npm install` → `npm run dev`. Open `http://localhost:5173`.
 
 ---
 
@@ -216,15 +223,38 @@ This allows local testing before full production credentials are ready.
 ### Frontend cannot reach API
 
 - Ensure backend is running at `http://localhost:8000`
-- Verify frontend API base URL in `frontend/src/api.ts`
+- Verify frontend API base URL in `frontend/src/api.ts` (default is `http://localhost:8000`)
+
+### "Blocked request. This host is not allowed" when using ngrok
+
+- The frontend is served by Vite. When you open it via an ngrok URL (e.g. `https://xxx.ngrok-free.dev`), Vite blocks the request unless the host is allowed.
+- **Fix:** The project already has `server.allowedHosts: true` in `frontend/vite.config.ts`, so all hosts (including any ngrok URL) are allowed. Restart the frontend dev server (`npm run dev`) after pulling. If you still see the error, confirm `vite.config.ts` contains `allowedHosts: true` under `server`.
 
 ---
 
-## 11) Recommended Startup Order (Every Time)
+## 11) Using ngrok (tunnels)
 
-1. PostgreSQL
-2. Actian VectorAI DB
-3. Redis (optional)
-4. Backend (`uvicorn`)
-5. Frontend (`npm run dev`)
+**Why:** ElevenLabs sends post-call webhooks to your backend. In development, your machine is not publicly reachable, so you expose the backend via ngrok and give that URL to ElevenLabs.
+
+**Backend (for webhooks):**
+- Run ngrok pointing at the backend port: `ngrok http 8000`
+- Copy the HTTPS URL (e.g. `https://abc123.ngrok-free.app`) and set it in ElevenLabs as the webhook URL for post-call (e.g. `https://abc123.ngrok-free.app/webhooks/elevenlabs/post-call`)
+- Backend CORS allows `http://localhost:5173`; for production you would add your frontend origin
+
+**Frontend (optional):**
+- If you want to share the app via ngrok (e.g. `ngrok http 5173`), the frontend must allow the ngrok host. The repo sets `allowedHosts: true` in `frontend/vite.config.ts` so any host (including ngrok) works. Restart `npm run dev` after pulling.
+
+**Note:** If you open the frontend at an ngrok URL, the frontend still calls the API at `API_BASE` in `frontend/src/api.ts` (localhost:8000). For the shared frontend to work for someone else, they would need the backend reachable at the same host or you’d need to set `API_BASE` from an env var (e.g. your backend ngrok URL).
+
+---
+
+## 12) Recommended Startup Order (Every Time)
+
+1. Start PostgreSQL (ensure `hacklytics` DB exists).
+2. Start Actian VectorAI DB (if using memory); see project link in §3.2.
+3. Start Redis (required for chat sessions and ElevenLabs webhook call-summary flow).
+4. From `backend` (with venv activated): `uvicorn app.main:app --reload` → API at `http://localhost:8000`.
+5. From `frontend`: `npm install` (once), then `npm run dev` → UI at `http://localhost:5173`.
+
+Optional: run `ngrok http 8000` and configure the HTTPS URL in ElevenLabs for post-call webhooks.
 

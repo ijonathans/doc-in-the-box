@@ -17,7 +17,6 @@ import { ProfileView } from "@/components/ProfileView";
 import { SidebarNavItem } from "@/components/SidebarNavItem";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { sendChatMessage } from "@/api";
@@ -145,9 +144,11 @@ export default function App() {
           {activeNav === "history" && <HistoryChatView />}
           {activeNav === "chat" && !isChatMode ? (
             <>
-              <div className="flex flex-col items-center justify-center gap-8 text-center md:min-h-[54vh]">
+              <div className="flex min-h-[calc(100vh-5rem)] flex-col items-center justify-center gap-8 text-center md:min-h-[calc(100vh-4rem)]">
                 <div className="h-16 w-16 rounded-full bg-[radial-gradient(circle_at_30%_30%,#c084fc_0%,#60a5fa_45%,#ec4899_100%)] shadow-lg" />
-                <h1 className="max-w-xl text-balance">Let us know your health problem</h1>
+                <h1 className="max-w-xl text-balance text-2xl font-semibold md:text-3xl">
+                  How can we help you today?
+                </h1>
 
                 <Card className="w-full max-w-3xl rounded-2xl border border-border shadow-input">
                   <CardContent className="space-y-4 p-6">
@@ -155,13 +156,10 @@ export default function App() {
                       value={prompt}
                       onChange={(event) => setPrompt(event.target.value)}
                       onKeyDown={handlePromptKeyDown}
-                      placeholder="What knowledge gap, skill, or misconception should this course solve?"
+                      placeholder="Describe your symptoms or health concern..."
                       className="min-h-[88px] text-base"
                     />
-                    <div className="flex items-center justify-between gap-4">
-                      <Button type="button" variant="ghost" className="h-9 rounded-full px-4 text-xs">
-                        Attach photos or files
-                      </Button>
+                    <div className="flex justify-end">
                       <PrimaryActionButton
                         type="button"
                         iconOnly
@@ -175,9 +173,9 @@ export default function App() {
               </div>
             </>
           ) : activeNav === "chat" ? (
-            <section className="fixed bottom-0 left-0 right-0 top-[61px] flex flex-col bg-background md:left-[72px] md:top-0">
-              <div className="flex-1 overflow-y-auto px-4 pb-6 pt-4 md:px-8 md:pt-8">
-                <div className="mx-auto flex h-full w-full max-w-5xl flex-col justify-end rounded-2xl border border-border bg-card p-4 shadow-card md:p-6">
+            <section className="fixed bottom-0 left-0 right-0 top-[61px] flex min-h-0 flex-col bg-background md:left-[72px] md:top-0">
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-4 md:px-8 md:pt-8">
+                <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col justify-end rounded-2xl border border-border bg-card p-4 shadow-card md:p-6">
                   <div className="space-y-4">
                     {messages.map((message) => (
                       <div key={message.id} className={message.role === "user" ? "flex justify-end" : "flex justify-start"}>
@@ -212,12 +210,10 @@ export default function App() {
                         onChange={(event) => setPrompt(event.target.value)}
                         onKeyDown={handlePromptKeyDown}
                         placeholder="Type a follow-up and press Enter to send..."
-                        className="min-h-[72px] text-base"
+                        rows={1}
+                        className="!min-h-[1.5rem] py-0 text-base"
                       />
-                      <div className="flex items-center justify-between gap-4">
-                        <Button type="button" variant="ghost" className="h-9 rounded-full px-4 text-xs">
-                          Attach photos or files
-                        </Button>
+                      <div className="flex justify-end">
                         <PrimaryActionButton
                           type="button"
                           onClick={handleSubmit}

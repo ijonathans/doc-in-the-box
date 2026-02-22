@@ -1,11 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 
 const HARDCODED_PROFILE = {
-  name: "Jane Doe",
-  email: "jane.doe@example.com",
-  dateOfBirth: "1990-05-15",
+  name: "John Smith",
+  email: "john.smith@example.com",
+  dateOfBirth: "1993-03-15",
   zip: "30332",
-  phone: "(404) 555-0123",
+  phone: "(912) 224-2661",
 };
 
 function Field({ label, value }: { label: string; value: string }) {
