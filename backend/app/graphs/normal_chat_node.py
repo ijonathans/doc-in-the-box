@@ -1,12 +1,12 @@
 from typing import Any
 
-from langchain_openai import ChatOpenAI
+from langchain_core.language_models.chat_models import BaseChatModel
 
 from app.graphs.state import InterviewState
 from app.utils.demo_patient import DEMO_PATIENT
 
 
-async def normal_chat_node(state: InterviewState, model: ChatOpenAI | None) -> dict[str, Any]:
+async def normal_chat_node(state: InterviewState, model: BaseChatModel | None) -> dict[str, Any]:
     latest_message = (state.get("latest_user_message") or "").strip()
     patient_first_name = (state.get("patient_context") or {}).get("first_name") or DEMO_PATIENT["first_name"]
     if not model:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from langchain_openai import ChatOpenAI
+from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import BaseModel, Field
 
 from app.graphs.state import InterviewState
@@ -17,7 +17,7 @@ class HandoffPhrase(BaseModel):
 
 
 async def chief_complaint_handoff_node(
-    state: InterviewState, model: ChatOpenAI | None
+    state: InterviewState, model: BaseChatModel | None
 ) -> dict[str, Any]:
     """
     Generate a short handoff phrase from chief_complaint for use in outbound call and RAG.

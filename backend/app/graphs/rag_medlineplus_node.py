@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from langchain_openai import ChatOpenAI
+from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import BaseModel, Field
 
 from app.graphs.state import InterviewState
@@ -62,7 +62,7 @@ def _evidence_context_for_llm(evidence: list[dict[str, Any]], max_items: int = 3
 async def _infer_recommended_provider(
     state: InterviewState,
     evidence: list[dict[str, Any]],
-    model: ChatOpenAI | None,
+    model: BaseChatModel | None,
 ) -> RecommendedProvider:
     if not model or not evidence:
         return RecommendedProvider(specialty="Primary Care", description="general health concerns")
@@ -122,7 +122,7 @@ def _build_combined_reply(
     return "\n".join(blocks)
 
 
-async def rag_medlineplus_node(state: InterviewState, model: ChatOpenAI | None = None) -> dict[str, Any]:
+async def rag_medlineplus_node(state: InterviewState, model: BaseChatModel | None = None) -> dict[str, Any]:
     """
     Run after ready_for_handoff: MedlinePlus KB search, infer provider type, Zocdoc search,
     set kb_evidence, provider_search (constraints + results), and assistant_reply.

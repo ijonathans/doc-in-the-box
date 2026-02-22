@@ -1,7 +1,7 @@
 import json
 from uuid import uuid4
 
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.core.config import settings
 from app.graphs.graph import TriageInterviewGraph
@@ -12,8 +12,8 @@ from app.services.session_store import RedisSessionStore
 class ChatService:
     def __init__(self) -> None:
         self.model = (
-            ChatOpenAI(model=settings.openai_model, api_key=settings.openai_api_key)
-            if settings.openai_api_key
+            ChatGoogleGenerativeAI(model=settings.gemini_model, api_key=settings.gemini_api_key)
+            if settings.gemini_api_key
             else None
         )
         self.graph = TriageInterviewGraph(self.model)

@@ -1,6 +1,6 @@
 from typing import Any
 
-from langchain_openai import ChatOpenAI
+from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import BaseModel, Field
 
 from app.graphs.common import dedupe, looks_like_emergency
@@ -34,7 +34,7 @@ class NurseExtraction(BaseModel):
     next_question: str = "What symptom is most concerning right now?"
 
 
-async def nurse_intake_node(state: InterviewState, model: ChatOpenAI | None) -> dict[str, Any]:
+async def nurse_intake_node(state: InterviewState, model: BaseChatModel | None) -> dict[str, Any]:
     latest_message = (state.get("latest_user_message") or "").strip()
     red_flags = state.get("red_flags") or {"present": [], "absent": [], "unknown": []}
     symptoms = state.get("symptoms") or []

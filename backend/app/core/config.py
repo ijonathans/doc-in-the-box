@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
     embedding_model: str = "text-embedding-3-small"
+
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-1.5-flash"
     memory_top_k: int = 3
     memory_vector_dimension: int = 1536
 

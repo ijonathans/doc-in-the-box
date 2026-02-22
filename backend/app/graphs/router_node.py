@@ -1,6 +1,6 @@
 from typing import Any, Literal
 
-from langchain_openai import ChatOpenAI
+from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import BaseModel
 
 from app.graphs.common import looks_like_health_concern
@@ -12,7 +12,7 @@ class RouterDecision(BaseModel):
     rationale: str = ""
 
 
-async def router_node(state: InterviewState, model: ChatOpenAI | None) -> dict[str, Any]:
+async def router_node(state: InterviewState, model: BaseChatModel | None) -> dict[str, Any]:
     latest_message = (state.get("latest_user_message") or "").strip()
     if state.get("conversation_mode") == "triage":
         return {

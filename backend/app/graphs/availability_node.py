@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from langchain_openai import ChatOpenAI
+from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import BaseModel, Field
 
 from app.graphs.state import InterviewState
@@ -41,7 +41,7 @@ def _format_availability_for_elevenlabs(slots: dict[str, list[str]]) -> str:
     return ", ".join(parts)
 
 
-async def _parse_availability_message(message: str, model: ChatOpenAI | None) -> dict[str, list[str]]:
+async def _parse_availability_message(message: str, model: BaseChatModel | None) -> dict[str, list[str]]:
     """Parse free-text availability into day -> list of time ranges. Returns empty dict on failure."""
     if not message or not message.strip():
         return {}
@@ -70,7 +70,7 @@ async def _parse_availability_message(message: str, model: ChatOpenAI | None) ->
         return {"General": [message.strip()]}
 
 
-async def availability_node(state: InterviewState, model: ChatOpenAI | None = None) -> dict[str, Any]:
+async def availability_node(state: InterviewState, model: BaseChatModel | None = None) -> dict[str, Any]:
     """
     If we already have patient_availability_time, return minimal update (graph routes to RAG).
     If awaiting_availability and user replied, parse message into slots + formatted string, clear awaiting_availability.

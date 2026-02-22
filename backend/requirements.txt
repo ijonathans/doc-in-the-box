@@ -8,7 +8,7 @@ python-dotenv
 httpx
 openai
 langchain
-langchain-openai
+langchain-google-genai
 langgraph
 celery
 redis

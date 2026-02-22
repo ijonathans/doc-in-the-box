@@ -1,6 +1,6 @@
 from typing import Any
 
-from langchain_openai import ChatOpenAI
+from langchain_core.language_models.chat_models import BaseChatModel
 from langgraph.graph import END, START, StateGraph
 
 from app.graphs.ask_booking_consent_node import ask_booking_consent_node
@@ -18,7 +18,7 @@ from app.graphs.state_verifier_node import state_verifier_node
 
 
 class TriageInterviewGraph:
-    def __init__(self, model: ChatOpenAI | None) -> None:
+    def __init__(self, model: BaseChatModel | None) -> None:
         self.model = model
         self.graph = self._build_graph()
 
