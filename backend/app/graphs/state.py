@@ -56,6 +56,7 @@ class InterviewState(TypedDict, total=False):
     missing_fields: list[str]
     patient_context: PatientContext
     chief_complaint: str | None
+    chief_complaint_handoff: str | None
     timeline: str | None
     severity: str | None
     body_location: str | None
@@ -82,6 +83,9 @@ class InterviewState(TypedDict, total=False):
     booking_confirmed: bool
     outbound_call: OutboundCallState
     reply_from_call_summary: bool  # Transient: do not persist; used to route to END after Call_summarize
+    awaiting_availability: bool
+    patient_availability_slots: dict[str, list[str]] | None  # e.g. {"Monday": ["morning until 10am"], "Friday": ["3PM to 6 PM"]}
+    patient_availability_time: str | None  # Formatted for ElevenLabs, e.g. "Monday morning until 10am, Friday evening from 3PM to 6 PM"
 
 
 DEFAULT_INTERVIEW_STATE: InterviewState = {
@@ -93,6 +97,7 @@ DEFAULT_INTERVIEW_STATE: InterviewState = {
         "risk_modifiers": {"immunosuppressed": "unknown", "blood_thinners": "unknown"},
     },
     "chief_complaint": None,
+    "chief_complaint_handoff": None,
     "timeline": None,
     "severity": None,
     "body_location": None,
@@ -125,6 +130,9 @@ DEFAULT_INTERVIEW_STATE: InterviewState = {
     "needs_emergency": False,
     "handoff_ready": False,
     "missing_fields": [],
+    "awaiting_availability": False,
+    "patient_availability_slots": None,
+    "patient_availability_time": None,
 }
 
 

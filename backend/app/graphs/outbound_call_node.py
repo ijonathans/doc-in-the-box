@@ -11,11 +11,11 @@ from app.core.config import settings
 from app.graphs.state import InterviewState
 from app.services.elevenlabs_call_agent import ElevenLabsCallAgent
 from app.services.session_store import RedisSessionStore
+from app.utils.demo_patient import DEMO_PATIENT
 
 # We do not override the system prompt or first message; the agent uses the
 # configuration set in the ElevenLabs platform (Doc-in-the-box). We only pass
-# dynamic_variables (clinic_name, clinic_address, chief_complaint, patient_first_name)
-# so the platform prompt can reference them if needed.
+# dynamic_variables so the platform prompt can reference them (e.g. {{patient_full_name}}).
 
 
 async def outbound_call_node(state: InterviewState) -> dict[str, Any]:
@@ -42,19 +42,35 @@ async def outbound_call_node(state: InterviewState) -> dict[str, Any]:
     clinic_name = (clinic.get("doctor_name") or "the clinic").strip()
     phone = clinic.get("phone_number") or ""
     address = clinic.get("address") or ""
-    chief_complaint = state.get("chief_complaint") or ""
+    chief_complaint = state.get("chief_complaint_handoff") or state.get("chief_complaint") or ""
 
     call_agent = ElevenLabsCallAgent(
         api_key=settings.elevenlabs_api_key,
         agent_id=settings.elevenlabs_agent_id,
         agent_phone_number_id=settings.elevenlabs_agent_phone_number_id,
     )
-    patient_first_name = (state.get("patient_context") or {}).get("first_name", "") or ""
+    ctx = state.get("patient_context") or {}
+    loc = ctx.get("location") or {}
+    patient_first_name = (ctx.get("first_name") or DEMO_PATIENT["first_name"]).strip() or DEMO_PATIENT["first_name"]
+    patient_last_name = (ctx.get("last_name") or DEMO_PATIENT["last_name"]).strip() or DEMO_PATIENT["last_name"]
+    patient_full_name = (ctx.get("full_name") or DEMO_PATIENT["full_name"]).strip() or DEMO_PATIENT["full_name"]
+    patient_email = (ctx.get("email") or DEMO_PATIENT["email"]).strip() or DEMO_PATIENT["email"]
+    patient_dob = (ctx.get("dob") or DEMO_PATIENT["dob"]).strip() or DEMO_PATIENT["dob"]
+    patient_zip = (loc.get("zip") or DEMO_PATIENT["zip"]).strip() or DEMO_PATIENT["zip"]
+    patient_phone = (ctx.get("phone") or DEMO_PATIENT["phone"]).strip() or DEMO_PATIENT["phone"]
+    patient_availability_time = state.get("patient_availability_time") or ""
     dynamic_variables = {
         "clinic_name": clinic_name,
         "clinic_address": address,
         "chief_complaint": chief_complaint or "general visit",
         "patient_first_name": patient_first_name,
+        "patient_last_name": patient_last_name,
+        "patient_full_name": patient_full_name,
+        "patient_email": patient_email,
+        "patient_dob": patient_dob,
+        "patient_zip": patient_zip,
+        "patient_phone": patient_phone,
+        "patient_availability_time": patient_availability_time,
     }
     # No prompt_override or first_message: use the agent's system prompt and first message from the ElevenLabs platform.
     result = await call_agent.start_twilio_outbound_call(

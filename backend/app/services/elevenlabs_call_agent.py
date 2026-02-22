@@ -110,6 +110,27 @@ class ElevenLabsCallAgent:
             "callSid": out.get("callSid", ""),
         }
 
+    async def get_conversation(self, conversation_id: str) -> dict:
+        """
+        Fetch conversation details (including transcript) from ElevenLabs.
+        GET /v1/convai/conversations/{conversation_id}
+        Returns JSON with transcript, analysis, etc. when call has ended; empty dict on error.
+        """
+        if not self.api_key or not conversation_id:
+            return {}
+        headers = {"xi-api-key": self.api_key, "Content-Type": "application/json"}
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                response = await client.get(
+                    f"{self.base_url}/convai/conversations/{conversation_id}",
+                    headers=headers,
+                )
+                if response.status_code >= 400:
+                    return {}
+                return response.json() if response.content else {}
+        except httpx.HTTPError:
+            return {}
+
     async def verify_and_book(self, appointment_payload: dict) -> dict:
         if not self.api_key or not self.agent_id:
             return {

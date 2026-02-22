@@ -46,6 +46,22 @@ class RedisSessionStore:
         payload = json.dumps({"summary": summary, "conversation_id": conversation_id})
         await self.redis.setex(self._summary_key(session_id), self.ttl_seconds, payload)
 
+    async def get_pending_call_summary_peek(self, session_id: str) -> dict[str, Any] | None:
+        """Get the pending call summary for this session without deleting it (read-only peek)."""
+        if not session_id:
+            return None
+        key = self._summary_key(session_id)
+        payload = await self.redis.get(key)
+        if not payload:
+            return None
+        return json.loads(payload)
+
+    async def delete_pending_call_summary(self, session_id: str) -> None:
+        """Delete the pending call summary for this session (e.g. after frontend has shown it)."""
+        if not session_id:
+            return
+        await self.redis.delete(self._summary_key(session_id))
+
     async def get_pending_call_summary(self, session_id: str) -> dict[str, Any] | None:
         """Get and clear the pending call summary for this session (consume once)."""
         if not session_id:

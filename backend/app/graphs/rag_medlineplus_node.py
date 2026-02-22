@@ -25,8 +25,9 @@ class RecommendedProvider(BaseModel):
 
 def _build_query(state: InterviewState) -> str:
     parts = []
-    if state.get("chief_complaint"):
-        parts.append(state["chief_complaint"])
+    complaint = state.get("chief_complaint_handoff") or state.get("chief_complaint")
+    if complaint:
+        parts.append(complaint)
     symptoms = state.get("symptoms") or []
     parts.extend(symptoms)
     if state.get("timeline"):
@@ -65,7 +66,7 @@ async def _infer_recommended_provider(
 ) -> RecommendedProvider:
     if not model or not evidence:
         return RecommendedProvider(specialty="Primary Care", description="general health concerns")
-    complaint = state.get("chief_complaint") or ""
+    complaint = state.get("chief_complaint_handoff") or state.get("chief_complaint") or ""
     symptoms = state.get("symptoms") or []
     timeline = state.get("timeline") or ""
     context = _evidence_context_for_llm(evidence)
@@ -135,7 +136,10 @@ async def rag_medlineplus_node(state: InterviewState, model: ChatOpenAI | None =
             "assistant_reply": state.get("assistant_reply")
             or "Intake complete. I couldn't search health topics right now; please talk to a provider.",
         }
-    results = await kb.search(query, top_k=TOP_K)
+    try:
+        results = await kb.search(query, top_k=TOP_K)
+    except Exception:
+        results = []
     evidence: list[dict[str, Any]] = [
         {"title": r.get("title"), "url": r.get("url"), "text": (r.get("text") or "")[:500], "score": r.get("score")}
         for r in results

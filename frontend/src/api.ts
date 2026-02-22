@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:8000";
+export const API_BASE = "/api";
 
 export async function registerPatient(payload: {
   first_name: string;
@@ -50,6 +50,8 @@ export type ChatApiResponse = {
   state: Record<string, unknown>;
   needs_emergency: boolean;
   handoff_ready: boolean;
+  outbound_call_started?: boolean;
+  outbound_call_error?: string;
 };
 
 const CHAT_REQUEST_TIMEOUT_MS = 120_000;
@@ -74,5 +76,24 @@ export async function sendChatMessage(message: string, sessionId: string | null)
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+export type PendingCallSummaryResponse = { summary: string | null };
+
+export async function getPendingCallSummary(sessionId: string): Promise<PendingCallSummaryResponse> {
+  const response = await fetch(
+    `${API_BASE}/chat/pending-call-summary?session_id=${encodeURIComponent(sessionId)}`
+  );
+  if (!response.ok) throw new Error("Failed to get pending call summary");
+  return response.json();
+}
+
+export async function consumeCallSummary(sessionId: string): Promise<{ ok: boolean }> {
+  const response = await fetch(
+    `${API_BASE}/chat/consume-call-summary?session_id=${encodeURIComponent(sessionId)}`,
+    { method: "POST" }
+  );
+  if (!response.ok) throw new Error("Failed to consume call summary");
+  return response.json();
 }
 

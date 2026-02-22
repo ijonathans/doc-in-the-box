@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
   CalendarCheck,
@@ -12,6 +12,7 @@ import {
 import { AppointmentView } from "@/components/AppointmentView";
 import { HistoryChatView } from "@/components/HistoryChatView";
 import { InsuranceView } from "@/components/InsuranceView";
+import { ParticleSphere } from "@/components/ParticleSphere";
 import { PrimaryActionButton } from "@/components/PrimaryActionButton";
 import { ProfileView } from "@/components/ProfileView";
 import { SidebarNavItem } from "@/components/SidebarNavItem";
@@ -19,7 +20,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { sendChatMessage } from "@/api";
+import {
+  API_BASE,
+  consumeCallSummary,
+  getPendingCallSummary,
+  sendChatMessage
+} from "@/api";
 
 type ChatMessage = {
   id: string;
@@ -33,6 +39,9 @@ export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatSessionId, setChatSessionId] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const callSummaryPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const callSummaryEventSourceRef = useRef<EventSource | null>(null);
+  const callSummaryShownRef = useRef(false);
 
   const navItemsMain = [
     { id: "chat", label: "Chat", icon: MessageCircle },
@@ -63,6 +72,72 @@ export default function App() {
         ...previous,
         { id: `${Date.now()}-assistant`, role: "assistant", content: response.reply }
       ]);
+      if (response.outbound_call_started && response.session_id) {
+        const sessionId = response.session_id;
+        callSummaryShownRef.current = false;
+        if (callSummaryPollRef.current) clearInterval(callSummaryPollRef.current);
+        if (callSummaryEventSourceRef.current) {
+          callSummaryEventSourceRef.current.close();
+          callSummaryEventSourceRef.current = null;
+        }
+
+        const stopPollingAndSSE = () => {
+          if (callSummaryPollRef.current) {
+            clearInterval(callSummaryPollRef.current);
+            callSummaryPollRef.current = null;
+          }
+          if (callSummaryEventSourceRef.current) {
+            callSummaryEventSourceRef.current.close();
+            callSummaryEventSourceRef.current = null;
+          }
+        };
+
+        const showSummaryInChat = (summary: string) => {
+          if (callSummaryShownRef.current) return;
+          callSummaryShownRef.current = true;
+          stopPollingAndSSE();
+          const reply = "**Call summary**\n\n" + summary.trim();
+          setMessages((prev) => [
+            ...prev,
+            { id: `${Date.now()}-call-summary`, role: "assistant", content: reply }
+          ]);
+          void consumeCallSummary(sessionId);
+        };
+
+        const eventsUrl = `${API_BASE}/chat/events?session_id=${encodeURIComponent(sessionId)}`;
+        const es = new EventSource(eventsUrl);
+        callSummaryEventSourceRef.current = es;
+        es.addEventListener("call_summary_ready", async () => {
+          try {
+            const { summary } = await getPendingCallSummary(sessionId);
+            if (summary?.trim()) showSummaryInChat(summary);
+          } catch {
+            // fallback to poll
+          }
+        });
+        es.onerror = () => {
+          es.close();
+          callSummaryEventSourceRef.current = null;
+        };
+
+        const startedAt = Date.now();
+        const POLL_MS = 5000;
+        const MAX_POLL_MS = 10 * 60 * 1000;
+        const GIVE_UP_MS = 10 * 60 * 1000;
+        callSummaryPollRef.current = setInterval(async () => {
+          const elapsed = Date.now() - startedAt;
+          if (elapsed > MAX_POLL_MS || elapsed > GIVE_UP_MS) {
+            stopPollingAndSSE();
+            return;
+          }
+          try {
+            const { summary } = await getPendingCallSummary(sessionId);
+            if (summary?.trim()) showSummaryInChat(summary);
+          } catch {
+            // ignore poll errors
+          }
+        }, POLL_MS);
+      }
     } catch {
       setMessages((previous) => [
         ...previous,
@@ -83,6 +158,16 @@ export default function App() {
       void handleSubmit();
     }
   }
+
+  useEffect(() => {
+    return () => {
+      if (callSummaryPollRef.current) clearInterval(callSummaryPollRef.current);
+      if (callSummaryEventSourceRef.current) {
+        callSummaryEventSourceRef.current.close();
+        callSummaryEventSourceRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <main className="min-h-screen">
@@ -145,7 +230,7 @@ export default function App() {
           {activeNav === "chat" && !isChatMode ? (
             <>
               <div className="flex min-h-[calc(100vh-5rem)] flex-col items-center justify-center gap-8 text-center md:min-h-[calc(100vh-4rem)]">
-                <div className="h-16 w-16 rounded-full bg-[radial-gradient(circle_at_30%_30%,#c084fc_0%,#60a5fa_45%,#ec4899_100%)] shadow-lg" />
+                <ParticleSphere />
                 <h1 className="max-w-xl text-balance text-2xl font-semibold md:text-3xl">
                   How can we help you today?
                 </h1>

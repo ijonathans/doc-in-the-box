@@ -41,6 +41,9 @@ class ChatService:
             state.setdefault("recurrent", None)
             state.setdefault("sick_contacts", None)
             state.setdefault("red_flags_screening_done", False)
+            state.setdefault("awaiting_availability", False)
+            state.setdefault("patient_availability_slots", None)
+            state.setdefault("patient_availability_time", None)
 
         state["session_id"] = resolved_session_id
         state["latest_user_message"] = message

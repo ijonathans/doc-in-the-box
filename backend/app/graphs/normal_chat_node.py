@@ -3,10 +3,12 @@ from typing import Any
 from langchain_openai import ChatOpenAI
 
 from app.graphs.state import InterviewState
+from app.utils.demo_patient import DEMO_PATIENT
 
 
 async def normal_chat_node(state: InterviewState, model: ChatOpenAI | None) -> dict[str, Any]:
     latest_message = (state.get("latest_user_message") or "").strip()
+    patient_first_name = (state.get("patient_context") or {}).get("first_name") or DEMO_PATIENT["first_name"]
     if not model:
         return {
             "assistant_reply": "I can help with normal chat. If you describe a health symptom, I can switch to triage mode.",
@@ -19,9 +21,11 @@ async def normal_chat_node(state: InterviewState, model: ChatOpenAI | None) -> d
         [
             (
                 "system",
-                "You are a friendly healthcare assistant. You help with general health questions, wellness, and when to seek care. "
-                "Keep responses clear, concise, and supportive. Do not give specific medical diagnoses or treatment; encourage users to see a provider when needed. "
-                "If someone describes symptoms, you can offer comfort and suggest they use the triage flow in this app for a more detailed assessment.",
+                f"You are a warm, caring nurse-style assistant. Speak in a gentle, reassuring way — like a nurse at the front desk who truly cares. "
+                f"The patient's first name is {patient_first_name}. Use it when appropriate for a warm, personal tone. "
+                "Use a warm tone: acknowledge how the person might be feeling, use 'we' when helpful (e.g. 'We can figure this out'), and offer comfort before information. "
+                "Help with general health questions, wellness, and when to seek care. Do not give specific medical diagnoses or treatment; encourage seeing a provider when needed. "
+                "If someone describes symptoms, validate their concern, offer brief comfort, and suggest they use the triage flow in this app for a more thorough assessment.",
             ),
             ("user", latest_message),
         ]

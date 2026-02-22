@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
+from app.services.call_summary_events import publish_call_summary_ready
 from app.services.session_store import RedisSessionStore
 
 router = APIRouter()
@@ -64,4 +65,5 @@ async def elevenlabs_post_call(request: Request) -> JSONResponse:
         return JSONResponse(content={"ok": True, "message": "Session not found"}, status_code=200)
     summary = _extract_summary_from_payload(body)
     await store.set_pending_call_summary(session_id, summary, conversation_id)
+    publish_call_summary_ready(session_id)
     return JSONResponse(content={"ok": True, "session_id": session_id}, status_code=200)

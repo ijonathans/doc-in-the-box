@@ -41,6 +41,7 @@ Copy the **Agent ID** (e.g. from the agent's URL or API section) into `ELEVENLAB
 - **Webhook URL**: Configure in ElevenLabs (agent or workspace webhook settings) to:
   - `https://your-backend-host/webhooks/elevenlabs/post-call`
   - For local dev with a tunnel (e.g. ngrok): `https://your-ngrok-url/webhooks/elevenlabs/post-call`
+  - **Single tunnel + Vite proxy:** When you run one ngrok tunnel on port 5173 (frontend) and Vite proxies `/api/*` to the backend, use webhook URL `https://<your-ngrok-host>/api/webhooks/elevenlabs/post-call`; Vite forwards it to the backend at `/webhooks/elevenlabs/post-call`.
 - The backend expects a JSON body with `conversation_id` and either an analysis summary or transcript (see [ElevenLabs post-call webhook docs](https://elevenlabs.io/docs/conversational-ai/workflows/post-call-webhooks)). When the user sends their next message (or the frontend polls), the graph runs the **Call_summarize** node first; if a pending summary exists for that session, it is returned as the chat reply and the node is the only one run for that turn.
 - Optionally, your webhook handler can also start the next clinic call if the current one did not book (same `POST /v1/convai/twilio/outbound-call` with the next clinic).
 

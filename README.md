@@ -1,4 +1,6 @@
-# Hacklytics GenAI Healthcare Agent
+# Doc in a Box
+
+An AI bridge between patients and providers. Turning symptoms and history into structured, triaged, provider-ready insights that accelerate care and reduce healthcare friction
 
 A proactive patient-facing AI agent that:
 
@@ -15,7 +17,7 @@ A proactive patient-facing AI agent that:
 
 **TL;DR:** From repo root: run PostgreSQL (+ Redis recommended). In `backend`: copy `.env.example` to `.env`, create venv, `pip install -r requirements.txt`, `uvicorn app.main:app --reload`. In `frontend`: `npm install`, `npm run dev`. Open **http://localhost:5173** for the app and **http://localhost:8000/docs** for the API.
 
-**Accessing via ngrok:** If you serve the frontend through an ngrok URL (e.g. `https://xxx.ngrok-free.dev`), Vite may block the host. The project allows all hosts in `frontend/vite.config.ts` (`server.allowedHosts: true`). Restart `npm run dev` after pulling; the "Blocked request. This host is not allowed" error should go away.
+**Demo via ngrok (single tunnel):** Run `ngrok http 5173`. Use that URL for the app; the frontend calls `/api/*` and Vite proxies to the backend. For ElevenLabs post-call webhook, set the URL to `https://<your-ngrok-host>/api/webhooks/elevenlabs/post-call`. See [STARTUP_GUIDE.md](STARTUP_GUIDE.md) §11.
 
 ## Project structure
 

@@ -232,19 +232,18 @@ This allows local testing before full production credentials are ready.
 
 ---
 
-## 11) Using ngrok (tunnels)
+## 11) Using ngrok (single tunnel)
 
-**Why:** ElevenLabs sends post-call webhooks to your backend. In development, your machine is not publicly reachable, so you expose the backend via ngrok and give that URL to ElevenLabs.
+**Why:** ElevenLabs sends post-call webhooks to your backend. In development, your machine is not publicly reachable. The app uses a **Vite proxy**: the frontend calls `/api/*`, and Vite forwards those requests to the backend (port 8000). So you need only **one** ngrok tunnel on port 5173.
 
-**Backend (for webhooks):**
-- Run ngrok pointing at the backend port: `ngrok http 8000`
-- Copy the HTTPS URL (e.g. `https://abc123.ngrok-free.app`) and set it in ElevenLabs as the webhook URL for post-call (e.g. `https://abc123.ngrok-free.app/webhooks/elevenlabs/post-call`)
-- Backend CORS allows `http://localhost:5173`; for production you would add your frontend origin
+**Single tunnel (recommended):**
+1. Run backend: `uvicorn app.main:app --reload` (port 8000).
+2. Run frontend: `npm run dev` (port 5173).
+3. Run **one** tunnel: `ngrok http 5173`.
+4. **Demo URL:** Use the ngrok HTTPS URL (e.g. `https://abc123.ngrok-free.app`) for the UI. The browser will request `/api/chat/message`, etc.; Vite proxies those to the backend.
+5. **ElevenLabs webhook URL:** Set in ElevenLabs to `https://<your-ngrok-host>/api/webhooks/elevenlabs/post-call` (e.g. `https://abc123.ngrok-free.app/api/webhooks/elevenlabs/post-call`). Requests to that URL hit Vite on 5173, and Vite forwards to `http://localhost:8000/webhooks/elevenlabs/post-call`.
 
-**Frontend (optional):**
-- If you want to share the app via ngrok (e.g. `ngrok http 5173`), the frontend must allow the ngrok host. The repo sets `allowedHosts: true` in `frontend/vite.config.ts` so any host (including ngrok) works. Restart `npm run dev` after pulling.
-
-**Note:** If you open the frontend at an ngrok URL, the frontend still calls the API at `API_BASE` in `frontend/src/api.ts` (localhost:8000). For the shared frontend to work for someone else, they would need the backend reachable at the same host or you’d need to set `API_BASE` from an env var (e.g. your backend ngrok URL).
+One public domain; frontend and backend appear unified; no CORS issues; no second tunnel.
 
 ---
 
@@ -256,5 +255,5 @@ This allows local testing before full production credentials are ready.
 4. From `backend` (with venv activated): `uvicorn app.main:app --reload` → API at `http://localhost:8000`.
 5. From `frontend`: `npm install` (once), then `npm run dev` → UI at `http://localhost:5173`.
 
-Optional: run `ngrok http 8000` and configure the HTTPS URL in ElevenLabs for post-call webhooks.
+Optional: run `ngrok http 5173` and use that URL for the demo and for ElevenLabs webhook: `https://<ngrok-host>/api/webhooks/elevenlabs/post-call`.
 
