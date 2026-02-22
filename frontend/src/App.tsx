@@ -207,7 +207,7 @@ export default function App() {
         </div>
       </aside>
 
-      <div className="sticky top-0 z-20 border-b border-border/70 bg-background/95 px-4 py-3 backdrop-blur md:hidden">
+      <div className="sticky top-0 z-20 flex h-14 flex-shrink-0 items-center border-b border-white/10 bg-sidebar md:hidden pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
         <div className="mx-auto flex max-w-content flex-wrap items-center justify-center gap-2">
           {navItems.map((item) => (
             <SidebarNavItem
@@ -221,7 +221,7 @@ export default function App() {
         </div>
       </div>
 
-      <section className="relative px-4 py-8 md:ml-[72px] md:px-8 md:py-10">
+      <section className="relative py-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] md:ml-[72px] md:px-8 md:py-10">
         <div className="mx-auto flex w-full max-w-content flex-col gap-16">
           {activeNav === "appointment" && <AppointmentView />}
           {activeNav === "insurance" && <InsuranceView />}
@@ -229,7 +229,7 @@ export default function App() {
           {activeNav === "history" && <HistoryChatView />}
           {activeNav === "chat" && !isChatMode ? (
             <>
-              <div className="flex min-h-[calc(100vh-5rem)] flex-col items-center justify-center gap-8 text-center md:min-h-[calc(100vh-4rem)]">
+              <div className="flex min-h-[calc(100vh-3.5rem)] flex-col items-center justify-center gap-8 text-center md:min-h-[calc(100vh-4rem)]">
                 <ParticleSphere />
                 <h1 className="max-w-xl text-balance text-2xl font-semibold md:text-3xl">
                   How can we help you today?
@@ -258,7 +258,7 @@ export default function App() {
               </div>
             </>
           ) : activeNav === "chat" ? (
-            <section className="fixed bottom-0 left-0 right-0 top-[61px] flex min-h-0 flex-col bg-background md:left-[72px] md:top-0">
+            <section className="fixed bottom-0 left-0 right-0 top-14 flex min-h-0 flex-col bg-background md:left-[72px] md:top-0">
               <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-4 md:px-8 md:pt-8">
                 <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col justify-end rounded-2xl border border-border bg-card p-4 shadow-card md:p-6">
                   <div className="space-y-4">
@@ -286,7 +286,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="border-t border-border bg-background px-4 py-4 md:px-8">
+              <div className="border-t border-border bg-background px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-8">
                 <div className="mx-auto w-full max-w-5xl">
                   <Card className="w-full rounded-2xl border border-border shadow-input">
                     <CardContent className="space-y-4 p-4 md:p-5">

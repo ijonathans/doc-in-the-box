@@ -16,9 +16,9 @@ export function HistoryChatView() {
             key={session.id}
             className="w-full max-w-xl cursor-pointer rounded-2xl border border-border shadow-card transition-shadow hover:shadow-input"
           >
-            <CardContent className="flex flex-row items-center justify-between p-4">
-              <span className="text-sm font-medium text-foreground">{session.title}</span>
-              <span className="text-xs text-muted-foreground">{session.date}</span>
+            <CardContent className="flex flex-col gap-1 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <span className="min-w-0 break-words text-sm font-medium text-foreground">{session.title}</span>
+              <span className="shrink-0 text-xs text-muted-foreground">{session.date}</span>
             </CardContent>
           </Card>
         ))}

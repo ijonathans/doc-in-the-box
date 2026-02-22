@@ -18,7 +18,7 @@ export function SidebarNavItem({ icon: Icon, label, active = false, onClick }: S
       size="sm"
       onClick={onClick}
       className={cn(
-        "h-10 w-10 rounded-xl p-0 text-sidebar-foreground/80 hover:bg-white/10 hover:text-sidebar-foreground",
+        "h-11 w-11 min-h-[44px] min-w-[44px] rounded-xl p-0 text-sidebar-foreground/80 hover:bg-white/10 hover:text-sidebar-foreground",
         active && "bg-primary text-white hover:bg-[#E85C1F] hover:text-white"
       )}
       aria-label={label}

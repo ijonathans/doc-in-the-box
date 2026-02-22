@@ -68,8 +68,8 @@ export function ProfileView() {
   return (
     <div className="flex flex-col gap-6">
       <h2 className="text-2xl font-semibold tracking-tight">Profile</h2>
-      <div className="flex flex-row items-start gap-6">
-        <Card className="w-full max-w-sm shrink-0 rounded-2xl border border-border shadow-card">
+      <div className="flex flex-col items-stretch gap-6 md:flex-row md:items-start">
+        <Card className="w-full max-w-sm shrink-0 rounded-2xl border border-border shadow-card md:shrink-0">
           <CardContent className="space-y-4 p-6">
             <Field label="Name" value={HARDCODED_PROFILE.name} />
             <Field label="Email" value={HARDCODED_PROFILE.email} />
